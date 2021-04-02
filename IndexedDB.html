@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1></h1>
+</body>
+
+<script>
+    let openRequest = indexedDB.open('MyOnlineShopDatabase', 1);
+
+    openRequest.onupgradeneeded = (event) => {
+        let db = openRequest.result;
+        switch (event.oldVersion) {
+            // version 0 means that the client had no database
+            // perform initialization
+            case 0: {
+                db.createObjectStore("MyProducts", { keyPath: "id" });
+            }
+            case 1: {
+                // client had version 1
+            }
+        }
+    };
+
+    openRequest.onsuccess = () => {
+        let db = openRequest.result;
+        // All data operations must be made within a transaction in IndexedDB.
+        let tx = db.transaction("MyProducts", "readwrite");
+        let products = tx.objectStore("MyProducts");
+
+        // create new object in MyProducts object store
+        products.put({
+            id: 1,
+            name: 'My First Product Name',
+            price: 12000
+        });
+
+        // get product by id
+        let getProduct = products.get(1);
+        getProduct.onsuccess = () => {
+            console.log(getProduct.result.name); // My First Product Name
+            document.getElementsByTagName("h1")[0].innerText = getProduct.result.name;
+            // in this example, after log we clear all products
+            products.clear();
+        };
+
+        // Close the db when the transaction is done
+        tx.oncomplete = () => {
+            db.close();
+        };
+    };
+
+    openRequest.onerror = () => {
+        console.error("Error", openRequest.error);
+    };
+</script>
+
+</html>
